@@ -9,7 +9,9 @@ from autofaq.cli.commands.util import create_directories_and_settings
 
 @entry.command(help="Initiates a new mining project")
 @click.option("-p", "--path", default=".", help="base path")
-@click.option("-f", "--force", default=False, is_flag=True, help="overwrite project if exists")
+@click.option(
+    "-f", "--force", default=False, is_flag=True, help="overwrite project if exists"
+)
 @click.argument("name")
 def init(name, path, force):
     click.echo("Initializing new mining project ...")
@@ -18,10 +20,7 @@ def init(name, path, force):
         ".cache": None,
     }
 
-    settings = {
-        "name": name,
-        "search_engine": "duck-duck-go"
-    }
+    settings = {"name": name, "search_engine": "duck-duck-go"}
 
     ok = create_directories_and_settings(structure, settings, pjoin(path, name), force)
     if ok:
