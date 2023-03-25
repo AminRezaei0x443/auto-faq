@@ -3,8 +3,8 @@ from os.path import join as pjoin
 
 import click
 
-from autofaq.cli.entry import entry
 from autofaq.cli.commands.util import create_directories_and_settings
+from autofaq.cli.entry import entry
 
 
 @entry.command(help="Initiates a new mining project")

@@ -1,11 +1,12 @@
 import subprocess
-from os.path import join as pjoin, exists as fexists
+from os.path import exists as fexists
+from os.path import join as pjoin
 
 import click
 import pandas as pd
 
-from autofaq.cli.entry import entry
 from autofaq.cli.commands.util import create_directories_and_settings
+from autofaq.cli.entry import entry
 from autofaq.search.google_keywords import GoogleKeywords
 
 modes = ["single", "google", "general"]
@@ -44,7 +45,8 @@ def keywords(keyword, append, digits, mode, language):
         if mode == "google" and keyword is None:
             click.echo(click.style("Keyword required for google mode!", fg="red"))
             return
-        df = kw.load(f"{f_word} {f_ap} {m_kw}".strip())
+
+        df = kw.load(f"{f_word} {f_ap} {m_kw}".replace("  ", " ").strip())
         data = list(df.suggestion)
     if append and fexists("keywords.csv"):
         prev_data = list(pd.read_csv("keywords.csv")["query"])
