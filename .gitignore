@@ -2,7 +2,8 @@
 # Project
 tmp-codes/
 test-space/
-
+lab/
+models/
 # MacOS
 .DS_Store
 Icon*
