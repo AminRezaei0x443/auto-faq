@@ -1,8 +1,8 @@
 import json
 import subprocess
+from hashlib import sha256
 from os.path import exists as fexists
 from os.path import join as pjoin
-from hashlib import sha256
 
 import click
 import pandas as pd
@@ -28,7 +28,7 @@ def extract():
     for d in tqdm(r):
         try:
             # TODO: multithread
-            # We check cahce first
+            # We check cache first
             hash_ = sha256(d["link"].encode("utf-8")).hexdigest()
             tg = f".cache/{hash_}"
             if fexists(tg):

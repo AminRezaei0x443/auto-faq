@@ -4,6 +4,17 @@ from bs4 import BeautifulSoup
 from bs4.element import Comment
 
 
+def parent_sig(p):
+    tags = []
+    t = p
+    while t is not None:
+        tags.insert(0, t.name)
+        t = t.parent
+    cls = "|".join(sorted(p.attrs.get("class", [])))
+    hi = ">".join(tags)
+    return hi + "+" + cls
+
+
 def tag_visible(element):
     if element.parent.name in [
         "style",
@@ -24,8 +35,8 @@ def text_from_html(body):
     soup = soup.find("body")
     texts = soup.findAll(text=True)
     visible_texts = filter(tag_visible, texts)
-    r = [t.strip() for t in visible_texts]
-    return list(filter(lambda x: x != "", r))
+    r = [(t.strip(), parent_sig(t.parent)) for t in visible_texts]
+    return list(filter(lambda x: x[0] != "", r))
 
 
 def is_question(sentence: str) -> bool:
@@ -37,13 +48,17 @@ def retreive_qa(html_content):
     stack = []
     cache = []
     current = None
-    for s in q_list:
+    last = None
+    for s, id_ in q_list:
         if is_question(s):
             if current:
-                stack.append((current, cache))
+                stack.append((current[0], cache))
                 cache = []
-            current = s
+                last = None
+            current = s, id_
         else:
             if current:
-                cache.append(s)
+                if last is None or last == id_:
+                    cache.append(s)
+                    last = id_
     return stack
