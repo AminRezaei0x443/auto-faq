@@ -2,6 +2,7 @@ import json
 import subprocess
 from os.path import exists as fexists
 from os.path import join as pjoin
+from hashlib import sha256
 
 import click
 import pandas as pd
@@ -27,11 +28,21 @@ def extract():
     for d in tqdm(r):
         try:
             # TODO: multithread
-            rs = requests.get(d["link"], headers=headers, timeout=3)
-            if rs.status_code != 200:
-                print("encountered error on dude", d["link"])
-            d["state"] = rs.status_code
-            d["html"] = rs.content
+            # We check cahce first
+            hash_ = sha256(d["link"].encode("utf-8")).hexdigest()
+            tg = f".cache/{hash_}"
+            if fexists(tg):
+                with open(tg, "rb") as f:
+                    d["state"] = 200
+                    d["html"] = f.read()
+            else:
+                rs = requests.get(d["link"], headers=headers, timeout=3)
+                if rs.status_code != 200:
+                    print("encountered error on dude", d["link"])
+                d["state"] = rs.status_code
+                d["html"] = rs.content
+                with open(tg, "wb") as f:
+                    f.write(d["html"])
         except Exception as e:
             print("encountered error on dude", d["link"])
             d["state"] = -1
