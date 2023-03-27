@@ -51,7 +51,7 @@ def extract():
         try:
             qa = retreive_qa(d["html"])
             d["qa"] = qa
-        except Exception as e:
+        except Exception:
             d["qa"] = []
     dataset = []
 
@@ -69,4 +69,5 @@ def extract():
                 }
             )
     data = pd.DataFrame(dataset)
+    data["id"] = range(len(data))
     data.to_csv("dataset.csv", index=False)
