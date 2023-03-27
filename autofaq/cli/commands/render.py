@@ -23,16 +23,23 @@ def render(filter_name):
     df = pd.read_csv("dataset.csv")
 
     filter_p = f"{filter_name}.filter"
+    filter_a = f"{filter_name}.aux"
     with open(filter_p, "rb") as f:
         filter_i = pickle.load(f)
+    aux = pd.read_pickle(filter_a)
     selection = df.apply(lambda x: filter_i[x["id"]], axis=1)
+    selection_aux = aux.apply(lambda x: filter_i[x["id"]], axis=1)
+
     df = df[selection]
+    aux = aux[selection_aux]
+    aux = aux.set_index("id")
+
     df = df.reset_index(drop=True)
 
     # df -> src_title, src_link, q, a
     pages = {row.src_link: row.src_title for _, row in df.iterrows()}
     grouped = {
-        link: list(df[df.src_link == link].apply(lambda x: (x.q, x.a), axis=1))
+        link: list(df[df.src_link == link].apply(lambda x: (x["id"], x.q, x.a), axis=1))
         for link in pages
     }
 
@@ -40,9 +47,12 @@ def render(filter_name):
     for group, pairs in grouped.items():
         title = pages[group]
         document.append(f"### {title}")
-        for q, a in pairs:
+        for id_, q, a in pairs:
             document.append(f"#### {q}")
             document.append(a)
+            aux_data = dict(aux.loc[id_])
+            aux_data = ", ".join(f"{k}={v:.2f}" for k, v in aux_data.items())
+            document.append(f"\n```{aux_data}```")
 
     doc = "\n".join(document)
     with open("out.md", "w") as f:
