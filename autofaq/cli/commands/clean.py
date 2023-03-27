@@ -55,7 +55,9 @@ def clean(name, cleaner, scratch, inplace):
         df = df[selection]
 
     cleaner = cleaners[cleaner]()
-    selection = cleaner.clean(df)
+    aux = pd.DataFrame()
+    aux["id"] = df["id"]
+    selection = cleaner.clean(df, aux=aux)
     print(f"Remnants: {selection.sum()}/{len(selection)}")
     if inplace:
         df[selection].to_csv("dataset.csv", index=False)
@@ -65,5 +67,6 @@ def clean(name, cleaner, scratch, inplace):
         filter_["selected"] = selection
         filter_d = {x["id"]: x["selected"] for _, x in filter_.iterrows()}
         filter_d = {**filter_i, **filter_d}
+        aux.to_pickle(f"{name}.aux")
         with open(filter_p, "wb") as f:
             pickle.dump(filter_d, f)

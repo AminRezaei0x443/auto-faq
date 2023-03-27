@@ -6,7 +6,7 @@ from autofaq.clean.cleaner import Cleaner
 
 
 class EntailmentCleaner(Cleaner):
-    def clean(self, df: DataFrame):
+    def clean(self, df: DataFrame, aux: DataFrame = None):
         embeddings = torch.load(".cache/embeddings.bin")
         scores_map = {k: torch.dot(v["q"], v["a"]) for k, v in embeddings.items()}
         self_scores = {k: torch.dot(v["q"], v["q"]) for k, v in embeddings.items()}
@@ -19,6 +19,8 @@ class EntailmentCleaner(Cleaner):
         deviations = list(deviation_map.values())
         m_dev, std_dev = np.mean(deviations), np.std(deviations)
         print(f"dev mean: {m_dev}, dev std: {std_dev}")
+        aux["entailment-score"] = df.apply(lambda x: scores_map[x["id"]], axis=1)
+        aux["entailment-deviation"] = df.apply(lambda x: deviation_map[x["id"]], axis=1)
         r = df.apply(
             lambda x: bool(
                 (scores_map[x["id"]] > m) and (deviation_map[x["id"]] < m_dev)
