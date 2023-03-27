@@ -23,7 +23,9 @@ class EntailmentCleaner(Cleaner):
         aux["entailment-deviation"] = df.apply(lambda x: deviation_map[x["id"]], axis=1)
         r = df.apply(
             lambda x: bool(
-                (scores_map[x["id"]] > m) and (deviation_map[x["id"]] < m_dev)
+                (scores_map[x["id"]] > m)
+                and (deviation_map[x["id"]] > (m_dev - std_dev))
+                and (deviation_map[x["id"]] < (m_dev + std_dev))
             ),
             axis=1,
         )
