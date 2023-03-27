@@ -1,5 +1,6 @@
 import json
 import pickle
+import re
 import subprocess
 from hashlib import sha256
 from os.path import exists as fexists
@@ -16,6 +17,10 @@ from user_agent import generate_user_agent
 from autofaq.cli.entry import entry
 from autofaq.language_model.xlm import embedSentences, openXLMSession
 from autofaq.util.out import sprint
+
+# This matches languages characters of persian and english (no digits)
+# Aim: Easy clearance of numbered lists and questions
+alpha_L = r"[^\u0041-\u005A\u0061-\u007A\u0622\u0626-\u0628\u062a-\u063a\u0641\u0642\u0644-\u0648\u067e\u0686\u0698\u06a9\u06af\u06cc]+"
 
 
 @entry.command(help="Renders the dataset as human-readable formats")
@@ -54,6 +59,7 @@ def render(filter_name):
         document.append(f"### {title}")
         for id_, q, a in pairs:
             q = q.replace("\n", "").strip()
+            q = re.sub(alpha_L, "", q, 1, re.UNICODE)
             document.append(f"#### {q}")
             document.append(a)
             aux_data = dict(aux.loc[id_])
