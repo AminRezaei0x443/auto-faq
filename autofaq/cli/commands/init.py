@@ -3,8 +3,9 @@ from os.path import join as pjoin
 
 import click
 
-from autofaq.cli.commands.util import create_directories_and_settings
 from autofaq.cli.entry import entry
+from autofaq.util.dir import create_directories_and_settings
+from autofaq.util.out import sprint
 
 
 @entry.command(help="Initiates a new mining project")
@@ -14,7 +15,7 @@ from autofaq.cli.entry import entry
 )
 @click.argument("name")
 def init(name, path, force):
-    click.echo("Initializing new mining project ...")
+    sprint("Initializing new mining project ...", fg="cyan")
 
     structure = {
         ".cache": None,
@@ -24,8 +25,6 @@ def init(name, path, force):
 
     ok = create_directories_and_settings(structure, settings, pjoin(path, name), force)
     if ok:
-        click.echo(click.style("Successfully created project!", fg="green"))
+        sprint("Successfully created project!", fg="green")
     else:
-        click.echo(
-            click.style("Error creating project!", fg="red"),
-        )
+        sprint("Error creating project!", fg="red")

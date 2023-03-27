@@ -3,6 +3,7 @@ import subprocess
 from hashlib import sha256
 from os.path import exists as fexists
 from os.path import join as pjoin
+from urllib.parse import unquote
 
 import click
 import pandas as pd
@@ -12,6 +13,7 @@ from user_agent import generate_user_agent
 
 from autofaq.cli.entry import entry
 from autofaq.extract.extract import retreive_qa
+from autofaq.util.out import sprint
 
 headers = {
     "User-Agent": generate_user_agent(),
@@ -22,9 +24,14 @@ headers = {
 
 @entry.command(help="Gathers all webpages and extracts QA pairs from them")
 def extract():
+    sprint("Starting the extraction process ...", fg="cyan")
+
     pages = pd.read_csv("search.csv")
     r = pages.to_dict(orient="index")
     r = list(r.values())
+
+    sprint("Gathering webpages from web:", fg="black")
+    errors = []
     for d in tqdm(r):
         try:
             # TODO: multithread
@@ -38,15 +45,26 @@ def extract():
             else:
                 rs = requests.get(d["link"], headers=headers, timeout=3)
                 if rs.status_code != 200:
-                    print("encountered error on dude", d["link"])
+                    errors.append(d["link"])
                 d["state"] = rs.status_code
                 d["html"] = rs.content
                 with open(tg, "wb") as f:
                     f.write(d["html"])
         except Exception as e:
-            print("encountered error on dude", d["link"])
+            errors.append(d["link"])
             d["state"] = -1
             d["html"] = e
+
+    if len(errors) != 0:
+        sprint(
+            "Couldn't gather @count webpages! List:",
+            fg="red",
+            count=(len(errors), "red", "bold"),
+        )
+        for e in errors:
+            sprint(unquote(e), fg="black")
+
+    sprint("Extracting QA pairs ...", fg="black")
     for d in tqdm(r):
         try:
             qa = retreive_qa(d["html"])
@@ -71,3 +89,4 @@ def extract():
     data = pd.DataFrame(dataset)
     data["id"] = range(len(data))
     data.to_csv("dataset.csv", index=False)
+    sprint("Successfully saved QA pairs to dataset.csv!", fg="green")

@@ -17,6 +17,7 @@ from autofaq.clean.entailment import EntailmentCleaner
 from autofaq.clean.fuzzy_match import FuzzCleaner
 from autofaq.clean.subject import SubjectCleaner
 from autofaq.cli.entry import entry
+from autofaq.util.out import sprint
 
 cleaners = {
     "classic": ClassicCleaner,
@@ -44,13 +45,10 @@ cleaners = {
 def clean(name, cleaner, scratch, inplace):
     df = pd.read_csv("dataset.csv")
     if name is None and not inplace:
-        click.echo(
-            click.style(
-                "You must provide a filter name when in not inplace mode!", fg="red"
-            )
-        )
+        sprint("You must provide a filter name when in not inplace mode!", fg="red")
         return
     filter_p = f"{name}.filter"
+    filter_a = f"{name}.aux"
     filter_i = {}
     if fexists(filter_p) and not scratch:
         with open(filter_p, "rb") as f:
@@ -58,11 +56,20 @@ def clean(name, cleaner, scratch, inplace):
         selection = df.apply(lambda x: filter_i[x["id"]], axis=1)
         df = df[selection]
 
-    cleaner = cleaners[cleaner]()
     aux = pd.DataFrame()
     aux["id"] = df["id"]
+    if fexists(filter_a) and not scratch:
+        aux = pd.read_pickle(filter_a)
+
+    cleaner = cleaners[cleaner]()
     selection = cleaner.clean(df, aux=aux)
-    print(f"Remnants: {selection.sum()}/{len(selection)}")
+    sprint(
+        "Survivors: @s @sep @all",
+        fg="white",
+        s=(selection.sum(), "green", "bold"),
+        all=(len(selection), "black"),
+        sep=("/", "black"),
+    )
     if inplace:
         df[selection].to_csv("dataset.csv", index=False)
     else:

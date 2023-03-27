@@ -5,9 +5,9 @@ from os.path import join as pjoin
 import click
 import pandas as pd
 
-from autofaq.cli.commands.util import create_directories_and_settings
 from autofaq.cli.entry import entry
 from autofaq.search.google_keywords import GoogleKeywords
+from autofaq.util.out import sprint
 
 modes = ["single", "google", "general"]
 
@@ -35,6 +35,7 @@ langs = {"fa": ("سوالات متداول", ""), "en": ("frequently asked quest
 )
 @click.argument("keyword", required=False)
 def keywords(keyword, append, digits, mode, language):
+    sprint("Gathering relevant keywords for project ...", fg="cyan")
     if mode == "single":
         data = [keyword]
     elif mode == "google" or mode == "general":
@@ -43,7 +44,7 @@ def keywords(keyword, append, digits, mode, language):
         f_word, f_ap = langs[language]
         m_kw = keyword if mode == "google" else ""
         if mode == "google" and keyword is None:
-            click.echo(click.style("Keyword required for google mode!", fg="red"))
+            sprint("Keyword required for google mode!", fg="red")
             return
 
         df = kw.load(f"{f_word} {f_ap} {m_kw}".replace("  ", " ").strip())
@@ -56,3 +57,4 @@ def keywords(keyword, append, digits, mode, language):
     df["query"] = data
     df["include"] = True
     df.to_csv("keywords.csv", index=False)
+    sprint("Successfully saved keywords to keywords.csv!", fg="green")

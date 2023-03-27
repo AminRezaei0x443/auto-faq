@@ -15,6 +15,7 @@ from user_agent import generate_user_agent
 
 from autofaq.cli.entry import entry
 from autofaq.language_model.xlm import embedSentences, openXLMSession
+from autofaq.util.out import sprint
 
 
 def batch(items, size=16):
@@ -37,15 +38,18 @@ def embed_batches(session, batches):
 @entry.command(help="Calculates the vector embeddings of the dataset")
 @click.argument("filter_name", required=False)
 def embed(filter_name):
-    df = pd.read_csv("dataset.csv")
+    sprint("Beginning the embedding process for project ...", fg="cyan")
 
-    filter_p = f"{filter_name}.filter"
-    with open(filter_p, "rb") as f:
-        filter_i = pickle.load(f)
-    selection = df.apply(lambda x: filter_i[x["id"]], axis=1)
-    df = df[selection]
+    df = pd.read_csv("dataset.csv")
+    if filter_name is not None:
+        filter_p = f"{filter_name}.filter"
+        with open(filter_p, "rb") as f:
+            filter_i = pickle.load(f)
+        selection = df.apply(lambda x: filter_i[x["id"]], axis=1)
+        df = df[selection]
     df = df.reset_index(drop=True)
 
+    sprint("Initiating ONNX session for language model ...", fg="black")
     session = openXLMSession(
         "/Volumes/WorkSpace/AutoFAQ/models/quantized-xlm-paraphrase"
     )
@@ -66,3 +70,4 @@ def embed(filter_name):
         }
 
     torch.save(embeddings, ".cache/embeddings.bin")
+    sprint("Successfully calculated and saved the embeddings!", fg="green")

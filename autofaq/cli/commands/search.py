@@ -8,6 +8,7 @@ import pandas as pd
 
 from autofaq.cli.entry import entry
 from autofaq.search.ddg_search import DDGSearch
+from autofaq.util.out import sprint
 
 engines = ["ddg"]
 langs = {"fa": None, "en": None}
@@ -29,9 +30,12 @@ langs = {"fa": None, "en": None}
     type=click.Choice(list(langs.keys())),
 )
 def search(engine, language):
+    sprint("Gathering search results for keywords ...", fg="cyan")
+
     engine = DDGSearch()
     query_list = pd.read_csv("keywords.csv")
     for q in query_list["query"]:
         engine.queue_search(q)
     results = engine.retreive()
     results.to_csv("search.csv", index=False)
+    sprint("Successfully saved results to search.csv!", fg="green")
