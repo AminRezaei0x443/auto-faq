@@ -13,10 +13,12 @@ from tqdm import tqdm
 from user_agent import generate_user_agent
 
 from autofaq.clean.classic import ClassicCleaner
+from autofaq.clean.entailment import EntailmentCleaner
 from autofaq.cli.entry import entry
 
 cleaners = {
     "classic": ClassicCleaner,
+    "entailment": EntailmentCleaner,
 }
 
 
