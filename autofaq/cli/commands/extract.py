@@ -1,5 +1,6 @@
 import json
 import subprocess
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from hashlib import sha256
 from os.path import exists as fexists
 from os.path import join as pjoin
@@ -22,6 +23,41 @@ headers = {
 }
 
 
+def fetch_content(url, retry=False):
+    try:
+        hash_ = sha256(url.encode("utf-8")).hexdigest()
+        tg = f".cache/{hash_}"
+        if fexists(tg):
+            with open(tg, "rb") as f:
+                c = f.read()
+                if c == "|error|" and not retry:
+                    return hash_, False
+                return hash_, True, f.read()
+        response = requests.get(url)
+        if response.status_code == 200:
+            with open(tg, "wb") as f:
+                f.write(response.content)
+            return hash_, True, response
+        else:
+            with open(tg, "wb") as f:
+                f.write("|error|".encode("utf-8"))
+            return hash_, False, None
+    except requests.exceptions.RequestException:
+        return hash_, False, None
+
+
+def download_contents(urls, num_threads=8):
+    contents = {}
+    with ThreadPoolExecutor(max_workers=num_threads) as executor:
+        futures = {executor.submit(fetch_content, url): url for url in urls}
+
+        for future in tqdm(as_completed(futures), total=len(urls)):
+            hash_, ok, content = future.result()
+            contents[hash_] = (ok, content)
+
+    return contents
+
+
 @entry.command(help="Gathers all webpages and extracts QA pairs from them")
 def extract():
     sprint("Starting the extraction process ...", fg="cyan")
@@ -32,28 +68,17 @@ def extract():
 
     sprint("Gathering webpages from web:", fg="black")
     errors = []
-    for d in tqdm(r):
-        try:
-            # TODO: multithread
-            # We check cache first
-            hash_ = sha256(d["link"].encode("utf-8")).hexdigest()
-            tg = f".cache/{hash_}"
-            if fexists(tg):
-                with open(tg, "rb") as f:
-                    d["state"] = 200
-                    d["html"] = f.read()
-            else:
-                rs = requests.get(d["link"], headers=headers, timeout=3)
-                if rs.status_code != 200:
-                    errors.append(d["link"])
-                d["state"] = rs.status_code
-                d["html"] = rs.content
-                with open(tg, "wb") as f:
-                    f.write(d["html"])
-        except Exception as e:
+    content_map = download_contents(list(r["link"]))
+    for d in r:
+        hash_ = sha256(d["link"].encode("utf-8")).hexdigest()
+        ok, content = content_map[hash_]
+        if ok:
+            d["state"] = 200
+            d["html"] = content
+        else:
             errors.append(d["link"])
             d["state"] = -1
-            d["html"] = e
+            d["html"] = ""
 
     if len(errors) != 0:
         sprint(
