@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="auto-faq",
-    version="0.0.2",
+    version="0.1.7",
     description="Automatic FAQ Mining Framework",
     license="MIT",
     packages=find_packages(),
