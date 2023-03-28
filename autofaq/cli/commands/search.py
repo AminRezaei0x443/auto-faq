@@ -9,9 +9,10 @@ import pandas as pd
 from autofaq.cli.entry import entry
 from autofaq.search.ddg_search import DDGSearch
 from autofaq.search.google_serp_search import serp_search_all
+from autofaq.search.xng_search import xng_search_all
 from autofaq.util.out import sprint
 
-engines = ["ddg", "google"]
+engines = ["ddg", "google", "xng"]
 langs = {"fa": None, "en": None}
 
 
@@ -48,5 +49,7 @@ def search(engine, results_num, language):
         results = engine.retreive()
     elif engine == "google":
         results = serp_search_all(query_list, num=results_num)
+    elif engine == "xng":
+        results = xng_search_all(query_list)
     results.to_csv("search.csv", index=False)
     sprint("Successfully saved results to search.csv!", fg="green")
