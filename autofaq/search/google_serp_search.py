@@ -14,6 +14,16 @@ from autofaq.search.limit_respecter import LimitRespecter, State
 
 
 def search_serp(q, num=10, country="ir", lang="fa"):
+    q = q.strip()
+    qx = f"{q}-{num}-{country}-{lang}"
+    sig = sha256(qx.encode("utf-8")).hexdigest()
+    cache_file = f".cache/serp.{sig}.cache"
+
+    if fexists(cache_file):
+        with open(cache_file, "r") as f:
+            res = json.load(f)
+            return res
+
     payload = json.dumps(
         {
             "q": q,
@@ -38,28 +48,20 @@ def search_serp(q, num=10, country="ir", lang="fa"):
         proxies=proxies,
     )
     res = response.json()
+
+    with open(cache_file, "w") as f:
+        json.dump(res, f)
+
     return res
 
 
 def serp_search_all(queries, num=10, country="ir", lang="fa", max_per_sec=50):
-    qx = "-".join(sorted(queries)) + f"-{num}-{country}-{lang}"
-    sig = sha256(qx.encode("utf-8")).hexdigest()
-    cache_file = f".cache/serp.{sig}.cache"
     all_ = []
-
-    if fexists(cache_file):
-        # Check cache first
-        with open(cache_file, "rb") as f:
-            all_ = pickle.load(f)
-    else:
-        # Search all
-        for q in tqdm(queries):
-            res = search_serp(q, num=num, country=country, lang=lang)
-            all_.append(res)
-            sleep(1 / max_per_sec)
-        # Cache Results
-        with open(cache_file, "wb") as f:
-            pickle.dump(all_, f)
+    # Search all
+    for q in tqdm(queries):
+        res = search_serp(q, num=num, country=country, lang=lang)
+        all_.append(res)
+        sleep(1 / max_per_sec)
 
     results = []
     for r in all_:
