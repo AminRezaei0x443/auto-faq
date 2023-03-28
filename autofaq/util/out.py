@@ -9,13 +9,14 @@ def sprint(msg, fg=None, **kwargs):
     msg_split = re.split(pattern, msg)
     styled = {}
     for k, v in kwargs.items():
-        match v:
-            case (value, color, st):
-                styled[f"@{k}"] = style(value, fg=color, bold=st == "bold")
-            case (value, color):
-                styled[f"@{k}"] = style(value, fg=color)
-            case value:
-                styled[f"@{k}"] = f"{value}"
+        if len(v) == 3:
+            value, color, st = v
+            styled[f"@{k}"] = style(value, fg=color, bold=st == "bold")
+        elif len(v) == 2:
+            value, color = v
+            styled[f"@{k}"] = style(value, fg=color)
+        else:
+            styled[f"@{k}"] = f"{v}"
     new_msg = []
     for m in msg_split:
         if m in styled:
