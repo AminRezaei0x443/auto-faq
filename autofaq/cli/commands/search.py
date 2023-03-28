@@ -8,9 +8,10 @@ import pandas as pd
 
 from autofaq.cli.entry import entry
 from autofaq.search.ddg_search import DDGSearch
+from autofaq.search.google_serp_search import serp_search_all
 from autofaq.util.out import sprint
 
-engines = ["ddg"]
+engines = ["ddg", "google"]
 langs = {"fa": None, "en": None}
 
 
@@ -23,19 +24,29 @@ langs = {"fa": None, "en": None}
     type=click.Choice(engines),
 )
 @click.option(
+    "-n",
+    "--results_num",
+    default=10,
+    help="result count for each search query (just for google currently)",
+)
+@click.option(
     "-l",
     "--language",
     default="fa",
     help="target language",
     type=click.Choice(list(langs.keys())),
 )
-def search(engine, language):
+def search(engine, results_num, language):
     sprint("Gathering search results for keywords ...", fg="cyan")
-
-    engine = DDGSearch()
     query_list = pd.read_csv("keywords.csv")
-    for q in query_list["query"]:
-        engine.queue_search(q)
-    results = engine.retreive()
+    query_list = query_list[query_list["include"]]
+    query_list = list(query_list["query"])
+    if engine == "ddg":
+        engine = DDGSearch()
+        for q in query_list:
+            engine.queue_search(q)
+        results = engine.retreive()
+    elif engine == "google":
+        results = serp_search_all(query_list, num=results_num)
     results.to_csv("search.csv", index=False)
     sprint("Successfully saved results to search.csv!", fg="green")
