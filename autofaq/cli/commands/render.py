@@ -16,6 +16,7 @@ from user_agent import generate_user_agent
 
 from autofaq.cli.entry import entry
 from autofaq.language_model.xlm import embedSentences, openXLMSession
+from autofaq.render.json_renderer import JSONRenderer
 from autofaq.render.md_renderer import MarkdownRenderer
 from autofaq.util.out import sprint
 
@@ -26,6 +27,7 @@ alpha_L = r"[^\u0041-\u005A\u0061-\u007A\u0622\u0626-\u0628\u062a-\u063a\u0641\u
 renderers = {
     "md": MarkdownRenderer,
     "markdown": MarkdownRenderer,
+    "json": JSONRenderer,
 }
 
 
