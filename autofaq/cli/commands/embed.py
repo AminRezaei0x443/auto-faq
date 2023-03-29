@@ -1,7 +1,6 @@
 import json
 import pickle
 import subprocess
-from hashlib import sha256
 from os.path import exists as fexists
 from os.path import join as pjoin
 
@@ -16,6 +15,7 @@ from user_agent import generate_user_agent
 from autofaq.cli.entry import entry
 from autofaq.language_model.xlm import embedSentences, openXLMSession
 from autofaq.util.out import sprint
+from autofaq.util.hash import sha256id
 
 
 def batch(items, size=16):
@@ -24,11 +24,11 @@ def batch(items, size=16):
 
 
 def embed_batches(session, batches):
-    embeddings = None
+    embeddings = ()
     batches = list(batches)  # To track progress
     for b in tqdm(batches):
         res = embedSentences(session, b)
-        if embeddings is None:
+        if len(embeddings) == 0:
             embeddings = res
         else:
             embeddings = torch.cat((embeddings, res))
@@ -50,7 +50,7 @@ def embed(filter_name, scratch):
             filter_i = pickle.load(f)
         selection = df.apply(lambda x: filter_i[x["id"]], axis=1)
         df = df[selection]
-    df = df.reset_index(drop=True)
+    o_df = df.reset_index(drop=True)
 
     sprint("Initiating ONNX session for language model ...", fg="black")
     session = openXLMSession(
@@ -64,8 +64,8 @@ def embed(filter_name, scratch):
         embeddings = {}
 
     # Filter out existants here
-    df = df[df["id"].apply(lambda x: x not in embeddings)]
-    df.reset_index()
+    df = o_df[o_df["id"].apply(lambda x: x not in embeddings)]
+    df.reset_index(drop=True)
 
     sprint("Embedding QA pairs ...", fg="black")
     sentences = list(df.q) + list(df.a)
@@ -81,6 +81,16 @@ def embed(filter_name, scratch):
             "q": q_e,
             "a": a_e,
         }
+
+    df = o_df[o_df.src_title.apply(lambda x: f"t-{sha256id(x)}" not in embeddings)]
+    df.reset_index(drop=True)
+
+    sprint("Embedding page titles ...", fg="black")
+    titles = list(set(df.src_title.apply(lambda x: x.strip())))
+    batches = batch(titles)
+    t_embeds = embed_batches(session, batches)
+    for title, embedding in zip(titles, t_embeds):
+        embeddings[f"t-{sha256id(title)}"] = embedding
 
     torch.save(embeddings, e_path)
     sprint("Successfully calculated and saved the embeddings!", fg="green")
