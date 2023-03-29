@@ -20,7 +20,17 @@ from autofaq.util.out import sprint
 
 # This matches languages characters of persian and english (no digits)
 # Aim: Easy clearance of numbered lists and questions
-alpha_L = r"[^\u0041-\u005A\u0061-\u007A\u0622\u0626-\u0628\u062a-\u063a\u0641\u0642\u0644-\u0648\u067e\u0686\u0698\u06a9\u06af\u06cc]+"
+alpha_L = r"[^\u0041-\u005A\u0061-\u007A\u0622\u0626-\u0628\u062a-\u063a\u0641\u0642\u0644-\u0648\u067e\u0686\u0698\u06a9\u06af\u06cc\u200f\u0020]+"
+
+
+def replace_prefix_pattern(target, pattern):
+    r = re.search(pattern, target, re.UNICODE)
+    if r is None:
+        return target
+    begin_i, end_i = r.span()
+    if begin_i == 0:
+        return target[end_i:]
+    return target
 
 
 @entry.command(help="Renders the dataset as human-readable formats")
@@ -53,17 +63,28 @@ def render(filter_name):
         for link in pages
     }
 
+    query_df = pd.read_csv("search.csv")
+    query_df = query_df.set_index("link", drop=True)
+
     document = []
     for group, pairs in grouped.items():
         title = pages[group]
+        query = query_df.loc[group]["q"]
+        if not isinstance(query, str):
+            query = query.iloc[0]
         document.append(f"### {title}")
         for id_, q, a in pairs:
             q = q.replace("\n", "").strip()
-            q = re.sub(alpha_L, "", q, 1, re.UNICODE)
+            q = replace_prefix_pattern(q, alpha_L)
             document.append(f"#### {q}")
             document.append(a)
             aux_data = dict(aux.loc[id_])
-            aux_data = ", ".join(f"{k}={v:.2f}" for k, v in aux_data.items())
+            aux_data = {
+                k: v if not isinstance(v, float) else f"{v:.2f}"
+                for k, v in aux_data.items()
+            }
+            aux_data["tag"] = query
+            aux_data = ", ".join(f"{k}={v}" for k, v in aux_data.items())
             if aux_data.strip() != "":
                 document.append(f"\n```{aux_data}```")
 
