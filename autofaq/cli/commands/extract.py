@@ -24,16 +24,16 @@ headers = {
 
 
 def fetch_content(url, retry=False):
+    hash_ = sha256(url.encode("utf-8")).hexdigest()
+    tg = f".cache/{hash_}"
     try:
-        hash_ = sha256(url.encode("utf-8")).hexdigest()
-        tg = f".cache/{hash_}"
         if fexists(tg):
             with open(tg, "rb") as f:
                 c = f.read()
                 if c == "|error|" and not retry:
                     return hash_, False
-                return hash_, True, f.read()
-        response = requests.get(url)
+                return hash_, True, c
+        response = requests.get(url, timeout=4)
         if response.status_code == 200:
             with open(tg, "wb") as f:
                 f.write(response.content)
@@ -43,6 +43,8 @@ def fetch_content(url, retry=False):
                 f.write("|error|".encode("utf-8"))
             return hash_, False, None
     except requests.exceptions.RequestException:
+        with open(tg, "wb") as f:
+            f.write("|error|".encode("utf-8"))
         return hash_, False, None
 
 
@@ -68,7 +70,7 @@ def extract():
 
     sprint("Gathering webpages from web:", fg="black")
     errors = []
-    content_map = download_contents(list(r["link"]))
+    content_map = download_contents(list(map(lambda x: x["link"], r)))
     for d in r:
         hash_ = sha256(d["link"].encode("utf-8")).hexdigest()
         ok, content = content_map[hash_]
