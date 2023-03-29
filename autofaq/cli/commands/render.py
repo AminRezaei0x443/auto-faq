@@ -16,11 +16,17 @@ from user_agent import generate_user_agent
 
 from autofaq.cli.entry import entry
 from autofaq.language_model.xlm import embedSentences, openXLMSession
+from autofaq.render.md_renderer import MarkdownRenderer
 from autofaq.util.out import sprint
 
 # This matches languages characters of persian and english (no digits)
 # Aim: Easy clearance of numbered lists and questions
 alpha_L = r"[^\u0041-\u005A\u0061-\u007A\u0622\u0626-\u0628\u062a-\u063a\u0641\u0642\u0644-\u0648\u067e\u0686\u0698\u06a9\u06af\u06cc\u200f\u0020]+"
+
+renderers = {
+    "md": MarkdownRenderer,
+    "markdown": MarkdownRenderer,
+}
 
 
 def replace_prefix_pattern(target, pattern):
@@ -34,8 +40,15 @@ def replace_prefix_pattern(target, pattern):
 
 
 @entry.command(help="Renders the dataset as human-readable formats")
+@click.option(
+    "-r",
+    "--renderer",
+    default="md",
+    help="renderer engine",
+    type=click.Choice(list(renderers.keys())),
+)
 @click.argument("filter_name", required=False)
-def render(filter_name):
+def render(filter_name, renderer):
     sprint("Rendering QA pairs to markdown ...", fg="cyan")
 
     df = pd.read_csv("dataset.csv")
@@ -66,30 +79,32 @@ def render(filter_name):
     query_df = pd.read_csv("search.csv")
     query_df = query_df.set_index("link", drop=True)
 
-    document = []
+    data = []
     for group, pairs in grouped.items():
         title = pages[group]
         query = query_df.loc[group]["q"]
         if not isinstance(query, str):
             query = query.iloc[0]
-        document.append(f"### {title}")
+        page = {
+            "title": title,
+            "query": query,
+            "pairs": [],
+        }
         for id_, q, a in pairs:
             q = q.replace("\n", "").strip()
             q = replace_prefix_pattern(q, alpha_L)
-            document.append(f"#### {q}")
-            document.append(a)
+
             aux_data = dict(aux.loc[id_])
-            aux_data = {
-                k: v if not isinstance(v, float) else f"{v:.2f}"
-                for k, v in aux_data.items()
-            }
-            aux_data["tag"] = query
-            aux_data = ", ".join(f"{k}={v}" for k, v in aux_data.items())
-            if aux_data.strip() != "":
-                document.append(f"\n```{aux_data}```")
+            page["pairs"].append(
+                {
+                    "q": q,
+                    "a": a,
+                    "aux": aux_data,
+                }
+            )
+        data.append(page)
 
-    doc = "\n".join(document)
-    with open("out.md", "w") as f:
-        f.write(doc)
+    renderer = renderers[renderer]()
+    o = renderer.render(data, "out")
 
-    sprint("Successfully rendered data to out.md!", fg="green")
+    sprint("Successfully rendered data to @o!", fg="green", o=(o, "green", "bold"))
