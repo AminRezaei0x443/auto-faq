@@ -10,6 +10,7 @@ class EntailmentCleaner(Cleaner):
     def clean(self, df: DataFrame, aux: DataFrame = None):
         sprint("Filtering data using entailment cleaner ...", fg="cyan")
         embeddings = torch.load(".cache/embeddings.bin")
+        embeddings = {k: v for k, v in embeddings.items() if isinstance(k, int)}
         scores_map = {k: torch.dot(v["q"], v["a"]) for k, v in embeddings.items()}
         self_scores = {k: torch.dot(v["q"], v["q"]) for k, v in embeddings.items()}
         deviation_map = {k: np.abs(scores_map[k] - self_scores[k]) for k in scores_map}

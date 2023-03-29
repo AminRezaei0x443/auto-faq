@@ -15,6 +15,7 @@ from user_agent import generate_user_agent
 from autofaq.clean.classic import ClassicCleaner
 from autofaq.clean.entailment import EntailmentCleaner
 from autofaq.clean.fuzzy_match import FuzzCleaner
+from autofaq.clean.page import PageCleaner
 from autofaq.clean.subject import SubjectCleaner
 from autofaq.cli.entry import entry
 from autofaq.util.out import sprint
@@ -24,6 +25,7 @@ cleaners = {
     "entailment": EntailmentCleaner,
     "subject": SubjectCleaner,
     "fuzz": FuzzCleaner,
+    "page": PageCleaner,
 }
 
 

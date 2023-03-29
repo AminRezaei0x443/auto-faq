@@ -14,8 +14,8 @@ from user_agent import generate_user_agent
 
 from autofaq.cli.entry import entry
 from autofaq.language_model.xlm import embedSentences, openXLMSession
-from autofaq.util.out import sprint
 from autofaq.util.hash import sha256id
+from autofaq.util.out import sprint
 
 
 def batch(items, size=16):
