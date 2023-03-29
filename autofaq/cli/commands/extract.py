@@ -13,13 +13,17 @@ from tqdm import tqdm
 from user_agent import generate_user_agent
 
 from autofaq.cli.entry import entry
-from autofaq.extract.extract import retreive_qa
+from autofaq.extract.easy_extractor import EasyExtractor
 from autofaq.util.out import sprint
 
 headers = {
     "User-Agent": generate_user_agent(),
     "Accept-Language": "en-US,en;q=0.9,fa-IR;q=0.8,fa;q=0.7",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
+}
+
+extractors = {
+    "easy": EasyExtractor,
 }
 
 
@@ -61,7 +65,14 @@ def download_contents(urls, num_threads=8):
 
 
 @entry.command(help="Gathers all webpages and extracts QA pairs from them")
-def extract():
+@click.option(
+    "-e",
+    "--extractor",
+    default="easy",
+    help="extractor engine",
+    type=click.Choice(list(extractors.keys())),
+)
+def extract(extractor):
     sprint("Starting the extraction process ...", fg="cyan")
 
     pages = pd.read_csv("search.csv")
@@ -92,25 +103,27 @@ def extract():
             sprint(unquote(e), fg="black")
 
     sprint("Extracting QA pairs ...", fg="black")
+
+    extractor = extractors[extractor]()
     for d in tqdm(r):
         try:
-            qa = retreive_qa(d["html"])
+            qa = extractor.extract(d["html"])
             d["qa"] = qa
         except Exception:
             d["qa"] = []
+
     dataset = []
 
     for d in tqdm(r):
         src_title = d["title"]
         src_link = d["link"]
         qa = d["qa"]
-        for q, a in qa:
+        for pair in qa:
             dataset.append(
                 {
                     "src_title": src_title,
                     "src_link": src_link,
-                    "q": q,
-                    "a": " ".join(a),
+                    **pair,
                 }
             )
     data = pd.DataFrame(dataset)
