@@ -36,8 +36,11 @@ def embed_batches(session, batches):
 
 
 @entry.command(help="Calculates the vector embeddings of the dataset")
+@click.option(
+    "-s", "--scratch", default=False, is_flag=True, help="ignore present embeddings"
+)
 @click.argument("filter_name", required=False)
-def embed(filter_name):
+def embed(filter_name, scratch):
     sprint("Beginning the embedding process for project ...", fg="cyan")
 
     df = pd.read_csv("dataset.csv")
@@ -54,7 +57,17 @@ def embed(filter_name):
         "/Volumes/WorkSpace/AutoFAQ/models/quantized-xlm-paraphrase"
     )
 
-    embeddings = {}
+    e_path = ".cache/embeddings.bin"
+    if fexists(e_path) and not scratch:
+        embeddings = torch.load(e_path)
+    else:
+        embeddings = {}
+
+    # Filter out existants here
+    df = df[df["id"].apply(lambda x: x not in embeddings)]
+    df.reset_index()
+
+    sprint("Embedding QA pairs ...", fg="black")
     sentences = list(df.q) + list(df.a)
     batches = batch(sentences)
     s_embeds = embed_batches(session, batches)
@@ -69,5 +82,5 @@ def embed(filter_name):
             "a": a_e,
         }
 
-    torch.save(embeddings, ".cache/embeddings.bin")
+    torch.save(embeddings, e_path)
     sprint("Successfully calculated and saved the embeddings!", fg="green")
