@@ -14,7 +14,7 @@ modes = ["single", "google", "general"]
 langs = {"fa": ("سوالات متداول", ""), "en": ("frequently asked questions", "in")}
 
 
-@entry.command(help="Creates a list of keywords")
+@entry.command(help="Generates an expanded list of keywords")
 @click.option(
     "-a", "--append", default=True, is_flag=True, help="append if keyword list exists"
 )

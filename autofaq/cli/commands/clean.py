@@ -30,7 +30,7 @@ cleaners = {
 }
 
 
-@entry.command(help="Cleans the dataset")
+@entry.command(help="Refines the dataset")
 @click.option(
     "-c",
     "--cleaner",

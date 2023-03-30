@@ -17,7 +17,7 @@ engines = {"ddg": DDGEngine, "google": SerpEngine, "xng": XNGEngine}
 langs = {"fa": None, "en": None}
 
 
-@entry.command(help="Gathers search results for keywords")
+@entry.command(help="Compiles search results for keywords")
 @click.option(
     "-e",
     "--engine",

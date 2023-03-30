@@ -35,7 +35,7 @@ def embed_batches(session, batches):
     return embeddings
 
 
-@entry.command(help="Calculates the vector embeddings of the dataset")
+@entry.command(help="Computes vector embeddings of the dataset")
 @click.option(
     "-s", "--scratch", default=False, is_flag=True, help="ignore present embeddings"
 )

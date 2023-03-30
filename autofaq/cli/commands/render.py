@@ -41,7 +41,7 @@ def replace_prefix_pattern(target, pattern):
     return target
 
 
-@entry.command(help="Renders the dataset as human-readable formats")
+@entry.command(help="Transforms the dataset into human-readable formats")
 @click.option(
     "-r",
     "--renderer",

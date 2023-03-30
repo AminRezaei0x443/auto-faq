@@ -64,7 +64,7 @@ def download_contents(urls, num_threads=8):
     return contents
 
 
-@entry.command(help="Gathers all webpages and extracts QA pairs from them")
+@entry.command(help="Collects webpages and extracts QA pairs")
 @click.option(
     "-e",
     "--extractor",
