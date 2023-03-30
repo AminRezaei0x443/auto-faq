@@ -3,6 +3,7 @@ import torch
 from pandas import DataFrame
 
 from autofaq.clean.cleaner import Cleaner
+from autofaq.config.configurable import Configurable
 from autofaq.util.hash import sha256id
 from autofaq.util.out import sprint
 
@@ -24,7 +25,7 @@ def filter_title(filter_map, title):
     return q
 
 
-class PageCleaner(Cleaner):
+class PageCleaner(Cleaner, Configurable):
     def clean(self, df: DataFrame, aux: DataFrame = None):
         sprint("Filtering data using page title cleaner ...", fg="cyan")
         embeddings = torch.load(".cache/embeddings.bin")
@@ -46,6 +47,12 @@ class PageCleaner(Cleaner):
             m=(m, "magenta"),
             std=(std, "magenta"),
         )
-        threshold = m + std
+        threshold = m + self.config.distance_std * std
         filter_ = {k: bool(v < threshold) for k, v in zip(title_map.keys(), distances)}
         return df.apply(lambda x: filter_title(filter_, x["src_title"]), axis=1)
+
+    def settings(self):
+        return {
+            "namespace": "clean.page",
+            "distance_std": (float, 1, False, ""),
+        }

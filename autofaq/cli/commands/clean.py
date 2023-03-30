@@ -18,6 +18,7 @@ from autofaq.clean.fuzzy_match import FuzzCleaner
 from autofaq.clean.page import PageCleaner
 from autofaq.clean.subject import SubjectCleaner
 from autofaq.cli.entry import entry
+from autofaq.config.binder import bind
 from autofaq.util.out import sprint
 
 cleaners = {
@@ -64,6 +65,10 @@ def clean(name, cleaner, scratch, inplace):
         aux = pd.read_pickle(filter_a)
 
     cleaner = cleaners[cleaner]()
+    ok = bind(cleaner, "settings.toml")
+    if not ok:
+        return
+
     selection = cleaner.clean(df, aux=aux)
     sprint(
         "Survivors: @s @sep @all",

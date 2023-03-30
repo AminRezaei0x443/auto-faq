@@ -3,10 +3,11 @@ import torch
 from pandas import DataFrame
 
 from autofaq.clean.cleaner import Cleaner
+from autofaq.config.configurable import Configurable
 from autofaq.util.out import sprint
 
 
-class EntailmentCleaner(Cleaner):
+class EntailmentCleaner(Cleaner, Configurable):
     def clean(self, df: DataFrame, aux: DataFrame = None):
         sprint("Filtering data using entailment cleaner ...", fg="cyan")
         embeddings = torch.load(".cache/embeddings.bin")
@@ -36,10 +37,29 @@ class EntailmentCleaner(Cleaner):
         aux["entailment-deviation"] = df.apply(lambda x: deviation_map[x["id"]], axis=1)
         r = df.apply(
             lambda x: bool(
-                (scores_map[x["id"]] > m)
-                and (deviation_map[x["id"]] > (m_dev - 2 * std_dev))
-                and (deviation_map[x["id"]] < (m_dev + 2 * std_dev))
+                (scores_map[x["id"]] > (m + self.config.entailment_std * var))
+                and (
+                    (not self.config.deviation_filter)
+                    or (
+                        (
+                            deviation_map[x["id"]]
+                            > (m_dev - self.config.deviation_std * std_dev)
+                        )
+                        and (
+                            deviation_map[x["id"]]
+                            < (m_dev + self.config.deviation_std * std_dev)
+                        )
+                    )
+                )
             ),
             axis=1,
         )
         return r
+
+    def settings(self):
+        return {
+            "namespace": "clean.entailment",
+            "entailment_std": (float, 0, False, ""),
+            "deviation_filter": (bool, True, False, ""),
+            "deviation_std": (float, 2, False, ""),
+        }
