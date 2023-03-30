@@ -1,6 +1,6 @@
 import os
 
-import toml
+from tomlkit import TOMLDocument, dump
 
 
 def create_directories(dir_structure: dict, start_path: str = "."):
@@ -16,11 +16,14 @@ def create_directories(dir_structure: dict, start_path: str = "."):
 
 
 def create_directories_and_settings(
-    directory_structure: dict, settings: dict, start_path: str = ".", force=False
+    directory_structure: dict,
+    settings: TOMLDocument,
+    start_path: str = ".",
+    force=False,
 ):
     if os.path.exists(start_path) and os.listdir(start_path) is not None and not force:
         return False
     create_directories(directory_structure, start_path)
     with open(os.path.join(start_path, "settings.toml"), "w") as f:
-        toml.dump(settings, f)
+        dump(settings, f)
     return True

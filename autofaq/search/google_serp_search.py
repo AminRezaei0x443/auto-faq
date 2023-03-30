@@ -28,7 +28,7 @@ class SerpEngine(SearchEngine, Configurable):
     def settings(self):
         return {
             "namespace": "search.google",
-            "api_key": (str, None, True, "Serper API Key"),
+            "api_key": (str, "API_KEY", True, "Serper API Key"),
             "lang": (str, "fa", False, "Language"),
             "country": (str, "ir", False, "Country"),
             "num_results": (int, 10, False, "Number of results"),
