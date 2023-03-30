@@ -41,7 +41,7 @@ def fetch_content(url, retry=False):
         if response.status_code == 200:
             with open(tg, "wb") as f:
                 f.write(response.content)
-            return hash_, True, response
+            return hash_, True, response.content
         else:
             with open(tg, "wb") as f:
                 f.write("|error|".encode("utf-8"))

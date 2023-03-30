@@ -26,7 +26,7 @@ class Configurable(ABC):
             if namespace:
                 k = f"{namespace}.{k}"
             type_, def_, req_, hint_ = v
-            ok = self.read_key(config, k, default=def_, required=req_)
+            ok = self.read_key(config, k, default=def_, required=req_, type_=type_)
             if not ok:
                 return False
         return True
@@ -43,7 +43,9 @@ class Configurable(ABC):
                 return None
         return r
 
-    def read_key(self, config: dict, key: str, default=None, required=False):
+    def read_key(
+        self, config: dict, key: str, default=None, required=False, type_=None
+    ):
         path = key.split(".")
         value = self._nested_get(config, path)
         if value is None and required:
@@ -55,5 +57,8 @@ class Configurable(ABC):
             return False
         if value is None:
             value = default
+        else:
+            if type_:
+                value = type_(value)
         setattr(self.config, path[-1], value)
         return True
