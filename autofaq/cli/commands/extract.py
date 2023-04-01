@@ -13,6 +13,7 @@ from tqdm import tqdm
 from user_agent import generate_user_agent
 
 from autofaq.cli.entry import entry
+from autofaq.extract.better_extractor import BetterExtractor
 from autofaq.extract.easy_extractor import EasyExtractor
 from autofaq.util.out import sprint
 
@@ -24,6 +25,7 @@ headers = {
 
 extractors = {
     "easy": EasyExtractor,
+    "better": BetterExtractor,
 }
 
 
