@@ -15,7 +15,7 @@ AutoFAQ's streamlined process follows these steps to generate a complete dataset
 ## Getting Started
 0. Install the `autofaq` CLI tool using:
     ```sh
-    pip install autofaq
+    pip install auto-faq
     ```
 1.
     ```sh 
