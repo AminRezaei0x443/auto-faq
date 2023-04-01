@@ -24,8 +24,8 @@ def openXLMSession(modelPath):
     tokenizer = AutoTokenizer.from_pretrained(modelPath, use_fast=True)
     options = SessionOptions()
     options.intra_op_num_threads = 1
-    options.execution_mode = ExecutionMode.ORT_SEQUENTIAL
-    session = InferenceSession(path.join(modelPath, "xlm.onnx"), options)
+    options.execution_mode = ExecutionMode.ORT_PARALLEL
+    session = InferenceSession(path.join(modelPath, "xlm.onnx"), options, providers=['TensorrtExecutionProvider', 'CUDAExecutionProvider', 'CPUExecutionProvider'])
     return {"session": session, "tokenizer": tokenizer}
 
 
