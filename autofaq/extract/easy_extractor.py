@@ -42,7 +42,9 @@ class EasyExtractor(BaseExtractor):
         return list(filter(lambda x: x[0] != "", r))
 
     def is_question(self, sentence: str) -> bool:
-        return sentence.strip().endswith("؟")
+        # This supports persian and english questions
+        # TODO: extend it to much better one
+        return sentence.strip().endswith("؟") or sentence.strip().endswith("?")
 
     def retreive_qa(self, html_content):
         q_list = self.text_from_html(html_content)
