@@ -1,4 +1,7 @@
 # AutoFAQ
+
+[![PyPI version](https://img.shields.io/badge/auto--faq-0.4.0-informational?style=flat-square&color=FFC000&labelColor=360825)](https://pypi.org/project/auto-faq/)
+
 AutoFAQ is a sophisticated FAQ dataset mining framework designed as an interactive CLI tool for rapid and efficient data collection. With AutoFAQ, you can compile comprehensive FAQ datasets in just minutes!
 
 ### Process Overview
