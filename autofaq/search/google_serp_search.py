@@ -29,15 +29,29 @@ class SerpEngine(SearchEngine, Configurable):
         return {
             "namespace": "search.google",
             "api_key": (str, "API_KEY", True, "Serper API Key"),
+            "url_filters": (list[str], [], False, "Url filters"),
             "lang": (str, "fa", False, "Language"),
             "country": (str, "ir", False, "Country"),
             "num_results": (int, 10, False, "Number of results"),
             "rate": (int, 50, False, "Rate of req/sec"),
+            "use_proxy": (
+                bool,
+                False,
+                False,
+                "Use proxy or not [Socks5 supported only]",
+            ),
+            "proxy_host": (str, "127.0.0.1", False, "Proxy host"),
+            "proxy_port": (int, 1089, False, "Proxy port"),
         }
 
     def search_serp(self, q, num=10, country="ir", lang="fa"):
         q = q.strip()
-        qx = f"{q}-{num}-{country}-{lang}"
+        url_filters = self.config.url_filters
+        filter_q = ""
+        if len(url_filters) > 0:
+            filter_q = "|".join(f'inurl:"{f}"' for f in url_filters)
+            filter_q = f"({filter_q}) "
+        qx = f"{filter_q}{q}-{num}-{country}-{lang}"
         sig = sha256(qx.encode("utf-8")).hexdigest()
         cache_file = f".cache/serp.{sig}.cache"
 
@@ -48,7 +62,7 @@ class SerpEngine(SearchEngine, Configurable):
 
         payload = json.dumps(
             {
-                "q": q,
+                "q": f"{filter_q}{q}",
                 "gl": country,
                 "hl": lang,
                 "num": num,
@@ -58,10 +72,12 @@ class SerpEngine(SearchEngine, Configurable):
             "X-API-KEY": self.config.api_key,
             "Content-Type": "application/json",
         }
-        proxies = {
-            "https": "socks5://127.0.0.1:1089",
-            "http": "socks5://127.0.0.1:1089",
-        }
+        proxies = None
+        if self.config.use_proxy:
+            proxies = {
+                "https": f"socks5://{self.config.proxy_host}:{self.config.proxy_port}",
+                "http": f"socks5://{self.config.proxy_host}:{self.config.proxy_port}",
+            }
         response = requests.request(
             "POST",
             "https://google.serper.dev/search",
