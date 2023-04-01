@@ -19,6 +19,9 @@ class Configurable(ABC):
         """
         pass
 
+    def on_bound(self):
+        pass
+
     def configure(self, config: dict):
         settings = self.settings()
         namespace = settings.pop("namespace", "")
@@ -29,6 +32,7 @@ class Configurable(ABC):
             ok = self.read_key(config, k, default=def_, required=req_, type_=type_)
             if not ok:
                 return False
+        self.on_bound()
         return True
 
     @classmethod
@@ -51,6 +55,13 @@ class Configurable(ABC):
         if value is None and required:
             sprint(
                 "You must provide a value for @key key in your config!",
+                fg="red",
+                key=(key, "white", "bold"),
+            )
+            return False
+        if required and value == default:
+            sprint(
+                "You must change the default value for @key key in your config!",
                 fg="red",
                 key=(key, "white", "bold"),
             )

@@ -10,6 +10,7 @@ from autofaq.clean.fuzzy_match import FuzzCleaner
 from autofaq.clean.page import PageCleaner
 from autofaq.clean.subject import SubjectCleaner
 from autofaq.cli.entry import entry
+from autofaq.language_model.xlm_embedder import XLMEmbedder
 from autofaq.search.ddg_engine import DDGEngine
 from autofaq.search.google_serp_search import SerpEngine
 from autofaq.search.xng_engine import XNGEngine
@@ -24,6 +25,7 @@ configurables = [
     DDGEngine,
     SerpEngine,
     XNGEngine,
+    XLMEmbedder,
 ]
 
 

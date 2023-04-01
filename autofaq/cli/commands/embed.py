@@ -13,34 +13,29 @@ from tqdm import tqdm
 from user_agent import generate_user_agent
 
 from autofaq.cli.entry import entry
-from autofaq.language_model.xlm import embedSentences, openXLMSession
+from autofaq.config.binder import bind
+from autofaq.language_model.xlm_embedder import XLMEmbedder
 from autofaq.util.hash import sha256id
 from autofaq.util.out import sprint
 
-
-def batch(items, size=16):
-    for i in range(0, len(items), size):
-        yield items[i : i + size]
-
-
-def embed_batches(session, batches):
-    embeddings = ()
-    batches = list(batches)  # To track progress
-    for b in tqdm(batches):
-        res = embedSentences(session, b)
-        if len(embeddings) == 0:
-            embeddings = res
-        else:
-            embeddings = torch.cat((embeddings, res))
-    return embeddings
+embedders = {
+    "xlm": XLMEmbedder,
+}
 
 
 @entry.command(help="Computes vector embeddings of the dataset")
 @click.option(
     "-s", "--scratch", default=False, is_flag=True, help="ignore present embeddings"
 )
+@click.option(
+    "-e",
+    "--embedder",
+    default="xlm",
+    help="embedder module",
+    type=click.Choice(list(embedders.keys())),
+)
 @click.argument("filter_name", required=False)
-def embed(filter_name, scratch):
+def embed(filter_name, embedder, scratch):
     sprint("Beginning the embedding process for project ...", fg="cyan")
 
     df = pd.read_csv("dataset.csv")
@@ -53,9 +48,10 @@ def embed(filter_name, scratch):
     o_df = df.reset_index(drop=True)
 
     sprint("Initiating ONNX session for language model ...", fg="black")
-    session = openXLMSession(
-        "/Volumes/WorkSpace/AutoFAQ/models/quantized-xlm-paraphrase"
-    )
+    embedder = embedders[embedder]()
+    ok = bind(embedder, "settings.toml")
+    if not ok:
+        return
 
     e_path = ".cache/embeddings.bin"
     if fexists(e_path) and not scratch:
@@ -70,7 +66,7 @@ def embed(filter_name, scratch):
     sprint("Embedding QA pairs ...", fg="black")
     sentences = list(df.q) + list(df.a)
     batches = batch(sentences)
-    s_embeds = embed_batches(session, batches)
+    s_embeds = embed_batches(embedder, batches)
 
     n = len(df)
 
@@ -88,9 +84,26 @@ def embed(filter_name, scratch):
     sprint("Embedding page titles ...", fg="black")
     titles = list(set(df.src_title.apply(lambda x: x.strip())))
     batches = batch(titles)
-    t_embeds = embed_batches(session, batches)
+    t_embeds = embed_batches(embedder, batches)
     for title, embedding in zip(titles, t_embeds):
         embeddings[f"t-{sha256id(title)}"] = embedding
 
     torch.save(embeddings, e_path)
     sprint("Successfully calculated and saved the embeddings!", fg="green")
+
+
+def batch(items, size=16):
+    for i in range(0, len(items), size):
+        yield items[i : i + size]
+
+
+def embed_batches(embedder, batches):
+    embeddings = ()
+    batches = list(batches)  # To track progress
+    for b in tqdm(batches):
+        res = embedder.embed(b)
+        if len(embeddings) == 0:
+            embeddings = res
+        else:
+            embeddings = torch.cat((embeddings, res))
+    return embeddings
