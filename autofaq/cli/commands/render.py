@@ -50,7 +50,8 @@ def replace_prefix_pattern(target, pattern):
     type=click.Choice(list(renderers.keys())),
 )
 @click.argument("filter_name", required=False)
-def render(filter_name, renderer):
+@click.argument("output_name", required=False, default="out")
+def render(filter_name, output_name, renderer):
     sprint("Rendering QA pairs to markdown ...", fg="cyan")
 
     df = pd.read_csv("dataset.csv")
@@ -106,7 +107,16 @@ def render(filter_name, renderer):
             )
         data.append(page)
 
-    renderer = renderers[renderer]()
-    o = renderer.render(data, "out")
+    involved_pages = len(data)
+    involved_pairs = sum(map(lambda p: len(p["pairs"]), data))
 
+    renderer = renderers[renderer]()
+    o = renderer.render(data, output_name)
+
+    sprint(
+        "Involved Pages: @pages", fg="black", pages=(involved_pages, "yellow", "bold")
+    )
+    sprint(
+        "Extracted Pairs: @pairs", fg="black", pairs=(involved_pairs, "yellow", "bold")
+    )
     sprint("Successfully rendered data to @o!", fg="green", o=(o, "green", "bold"))
