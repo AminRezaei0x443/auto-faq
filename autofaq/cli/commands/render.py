@@ -90,6 +90,7 @@ def render(filter_name, output_name, renderer):
             query = query.iloc[0]
         page = {
             "title": title,
+            "src": group,
             "query": query,
             "pairs": [],
         }
